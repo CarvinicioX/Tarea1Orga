@@ -16,15 +16,21 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  */
 public class Tarea1Orga {
 
+    /* Ram = 4096 B
+    Cache = 256 B = 32 Lineas
+    Bloque = 8 B = 8 Palabras
+    Conjunto = 4 Lineas
+    Palabras = 1 B */
     static int[] Ram;
-    static Object[][] Cache;
+    static int[][] CacheData;
+    static boolean[] Validate;
+    static String[] Tag;
     static double cont = 0;
 
     public static void main(String[] args) {
         init();
-        int tipo, menor, mayor, a;
-        for (int k = 0; k < 4; k++) {
-            tipo = k;
+        int menor, mayor, a;
+        for (int tipo = 0; tipo < 4; tipo++) {
             escribir(100, tipo, 10);    //En la memoria 100 escribe un 10
             escribir(101, tipo, 13);
             escribir(102, tipo, 21);
@@ -54,21 +60,21 @@ public class Tarea1Orga {
                     mayor = leer(i, tipo);
                 }
             }
-            System.out.println(cont);
+            System.out.print("Para ");
+            System.out.print(cont);
         }
         System.exit(0);
     }
 
     public static void init() {
         Ram = new int[4096];
-        Cache = new Object[32][11];
+        CacheData = new int[32][11];
         cont = 0;
         for (int i = 0; i < 32; i++) {
-            Cache[i][0] = false;
-            Cache[i][1] = false;
-            Cache[i][2] = "";
-            for (int j = 3; j < 11; j++) {
-                Cache[i][j] = 0;
+            Validate[i] = false;
+            Tag[i] = "";
+            for (int j = 0; j < 8; j++) {
+                CacheData[i][j] = 0;
             }
         }
         JFileChooser jfc = new JFileChooser();
