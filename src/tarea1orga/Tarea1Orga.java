@@ -9,6 +9,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.util.Queue;
 /**
  *
  * @author Vinicio.Guevara
@@ -30,6 +31,7 @@ public class Tarea1Orga {
     */
     static int[] Ram;
     static int[][] CacheData;
+    static int[] LFU;
     static boolean[] Validate;
     static double[] Time;
     static String[] Tag;
@@ -39,7 +41,7 @@ public class Tarea1Orga {
     public static void main(String[] args) {
         //int x = Integer.rotateRight(2777, 3)&4095; //Obtiene solo los primeros 9 bits (etiqueta)
         //System.out.println(x);
-        init();
+        Time = new double[4];
         int menor, mayor, a;
         for (int tipo = 0; tipo < 4; tipo++) {
             init();
@@ -75,16 +77,24 @@ public class Tarea1Orga {
             Time[tipo] = cont;
             cont = 0;
         }
+        System.out.println("SIN RAM:\t" + Time[0]);
+        System.out.println("DIRECTA:\t" + Time[1]);
+        System.out.println("ASOCIATIVA:\t" + Time[2]);
+        System.out.println("POR CONJUNTOS:\t" + Time[3]);
         System.exit(0);
     }
 
     public static void init() {
         Ram = new int[4096];
         CacheData = new int[32][8];
+        LFU = new int[32];
+        Validate = new boolean[32];
+        Tag =  new String[32];
         cont = 0;
         for (int i = 0; i < 32; i++) {
             Validate[i] = false;
             Tag[i] = "";
+            LFU[i] = 0;
             for (int j = 0; j < 8; j++) {
                 CacheData[i][j] = 0;
             }
@@ -133,18 +143,30 @@ public class Tarea1Orga {
             }
             case 2: {//Correspondecia Asociativa
                 int line = -1;//-1 no existe
+                int lineNotExists = 0;//-1 no existe
+                int menor = LFU[0];
                 for (int i = 0; i < CacheData.length; i++) {
                     if(Validate[i]){
-                        if(Tag[i].equals(Integer.toBinaryString(d).substring(0, 8))){
+                        if(!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3)&4095) + "")){
                             line = i;
                         }
                     }
+                    if(menor > LFU[i]){
+                        menor = LFU[i];
+                        lineNotExists = i;
+                    }
                 }
                 if(line == -1){
-                    CacheData[i][] = Ram[d]
+                    line = lineNotExists;
+                    moverRam_Cache(line,d);
+                    Validate[line] = true;
+                    Tag[line] = (Integer.rotateRight(d, 3)&4095) + "";
+                    cont += 0.1;
                 }
+                cont += 0.01;
+                LFU[line]++;
+                return CacheData[line][d&7];//d&7 son solo los ultimos 3 bits la direccion
                 //Integer.rotateRight(2777, 3)&4095 //dis gets the value of the tag
-                break;
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
 
@@ -166,13 +188,48 @@ public class Tarea1Orga {
                 break;
             }
             case 2: {//Correspondecia Asociativa
-
-                break;
+                int line = -1;//-1 no existe
+                int lineNotExists = 0;//-1 no existe
+                int menor = LFU[0];
+                for (int i = 0; i < CacheData.length; i++) {
+                    if(Validate[i]){
+                        if(!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3)&4095) + "")){
+                            line = i;
+                        }
+                    }
+                    if(menor > LFU[i]){
+                        menor = LFU[i];
+                        lineNotExists = i;
+                    }
+                }
+                if(line == -1){
+                    line = lineNotExists;
+                    Validate[line] = true;
+                    Tag[line] = (Integer.rotateRight(d, 3)&4095) + "";
+                    moverRam_Cache(line,d);
+                    cont += 0.1;
+                }
+                cont += 0.01;
+                CacheData[line][d&7] = data;//d&7 son solo los ultimos 3 bits la direccion
+                //cont += 0.11;
+                moverCache_Ram(line,d);
+                LFU[line]++;
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
 
                 break;
             }
         }
+    }
+    //pero antes hay que pasarlo de la RAM a la cache 
+    public static void moverRam_Cache(int line, int d){
+        //System.out.println(line);
+        for(int i = 0; i < CacheData[line].length; i++){
+             CacheData[line][i] = Ram[d+i];
+        }
+    }
+    //y luego de la caché a la RAM 
+    public static void moverCache_Ram(int line, int d){
+       Ram[d]=CacheData[line][d&7];//d&7 son solo los ultimos 3 bits la direccion
     }
 }
