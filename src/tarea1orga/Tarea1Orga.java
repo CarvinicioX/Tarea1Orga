@@ -1,4 +1,4 @@
-package tarea1orga;
+package def;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,7 +9,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.util.Queue;
+
 /**
  *
  * @author Vinicio.Guevara
@@ -28,11 +28,14 @@ public class Tarea1Orga {
     9 bits la etiqueta
     12 bits la direccion
     +++++++++++++
-    */
+     */
     static int[] Ram;
     static int[][] CacheData;
+    //0 -
     static int[] LFU;
     static boolean[] Validate;
+    static boolean[] Modified;
+    static int[] Block;
     static double[] Time;
     static String[] Tag;
     static double cont = 0;
@@ -77,10 +80,17 @@ public class Tarea1Orga {
             Time[tipo] = cont;
             cont = 0;
         }
-        System.out.println("SIN RAM:\t" + Time[0]);
-        System.out.println("DIRECTA:\t" + Time[1]);
-        System.out.println("ASOCIATIVA:\t" + Time[2]);
-        System.out.println("POR CONJUNTOS:\t" + Time[3]);
+        for (int i = 0; i < 4; i++) {
+            Time[i] = Math.round(Time[i] * 100.0) / 100.0;
+        }
+        System.out.println(" ----------------------------------------------");
+        System.out.println("|           Tipo           | Tiempo de Corrida");
+        System.out.println(" --------------------------+-------------------");
+        System.out.println("|        Sin Cache         | " + Time[0] + " μs");
+        System.out.println("|         Directo          | " + Time[1] + " μs");
+        System.out.println("|        Asociativo        | " + Time[2] + " μs");
+        System.out.println("| Asociativo por Conjuntos | " + Time[3] + " μs");
+        System.out.println(" ----------------------------------------------");
         System.exit(0);
     }
 
@@ -89,10 +99,14 @@ public class Tarea1Orga {
         CacheData = new int[32][8];
         LFU = new int[32];
         Validate = new boolean[32];
-        Tag =  new String[32];
+        Modified = new boolean[32];
+        Block = new int[32];
+        Tag = new String[32];
         cont = 0;
         for (int i = 0; i < 32; i++) {
             Validate[i] = false;
+            Modified[i] = false;
+            Block[i] = 0;
             Tag[i] = "";
             LFU[i] = 0;
             for (int j = 0; j < 8; j++) {
@@ -132,13 +146,41 @@ public class Tarea1Orga {
     }
 
     public static int leer(int d, int type) {
+        int valor = -1;
         switch (type) {
             case 0: {//Sin Ram
                 cont += 0.1;
                 return Ram[d];
             }
             case 1: {//Correspondecia Directa
-
+                int j = Math.floorDiv(d, 8);
+                int ld = j % 32;
+                if (!Validate[ld]) {
+                    Validate[ld] = true;
+                    Modified[ld] = false;
+                    for (int k = 0; k < 8; k++) { //Mover de RAM a Cache
+                        CacheData[ld][k] = Ram[j * 8 + k];
+                    }
+                    Block[ld] = j; //wtf? adonde
+                    cont += 0.11;
+                } else if (Block[ld] != j) { //Otra vez. ADONDE???
+                    if (Modified[ld]) {
+                        for (int k = 0; k < 8; k++) { //Mover de Cache a RAM
+                            Ram[j * 8 + k] = CacheData[ld][k];
+                        }
+                        Modified[ld] = false;
+                        cont += 0.22;
+                    } else {
+                        cont += 0.11;
+                    }
+                    for (int k = 0; k < 8; k++) { //Mover de RAM a Cache
+                        CacheData[ld][k] = Ram[j * 8 + k];
+                    }
+                    Block[ld] = j; //Im done.
+                } else {
+                    cont += 0.01;
+                }
+                valor = CacheData[ld][d % 8];
                 break;
             }
             case 2: {//Correspondecia Asociativa
@@ -146,26 +188,26 @@ public class Tarea1Orga {
                 int lineNotExists = 0;//-1 no existe
                 int menor = LFU[0];
                 for (int i = 0; i < CacheData.length; i++) {
-                    if(Validate[i]){
-                        if(!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3)&4095) + "")){
+                    if (Validate[i]) {
+                        if (!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3) & 4095) + "")) {
                             line = i;
                         }
                     }
-                    if(menor > LFU[i]){
+                    if (menor > LFU[i]) {
                         menor = LFU[i];
                         lineNotExists = i;
                     }
                 }
-                if(line == -1){
+                if (line == -1) {
                     line = lineNotExists;
-                    moverRam_Cache(line,d);
+                    moverRam_Cache(line, d);
                     Validate[line] = true;
-                    Tag[line] = (Integer.rotateRight(d, 3)&4095) + "";
+                    Tag[line] = (Integer.rotateRight(d, 3) & 4095) + "";
                     cont += 0.1;
                 }
                 cont += 0.01;
                 LFU[line]++;
-                return CacheData[line][d&7];//d&7 son solo los ultimos 3 bits la direccion
+                return CacheData[line][d & 7];//d&7 son solo los ultimos 3 bits la direccion
                 //Integer.rotateRight(2777, 3)&4095 //dis gets the value of the tag
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
@@ -173,7 +215,7 @@ public class Tarea1Orga {
                 break;
             }
         }
-        return 0;
+        return valor;
     }
 
     public static void escribir(int d, int type, int data) {
@@ -184,7 +226,33 @@ public class Tarea1Orga {
                 break;
             }
             case 1: {//Correspondecia Directa
-
+                int j = Math.floorDiv(d, 8);
+                int ld = j % 32;
+                if (!Validate[ld]) {
+                    Validate[ld] = true;
+                    for (int k = 0; k < 8; k++) { //Mover de RAM a Cache
+                        CacheData[ld][k] = Ram[j * 8 + k];
+                    }
+                    Block[ld] = j;
+                    cont += 0.11;
+                } else if (Block[ld] != j) {
+                    if (Modified[ld]) {
+                        for (int k = 0; k < 8; k++) { //Mover de Cache a RAM
+                            Ram[j * 8 + k] = CacheData[ld][k];
+                        }
+                        cont += 0.22;
+                    } else {
+                        cont += 0.11;
+                    }
+                    for (int k = 0; k < 8; k++) { //Mover de RAM a Cache
+                        CacheData[ld][k] = Ram[j * 8 + k];
+                    }
+                    Block[ld] = j;
+                } else {
+                    cont += 0.01;
+                }
+                Modified[ld] = true;
+                CacheData[ld][d % 8] = data;
                 break;
             }
             case 2: {//Correspondecia Asociativa
@@ -192,27 +260,27 @@ public class Tarea1Orga {
                 int lineNotExists = 0;//-1 no existe
                 int menor = LFU[0];
                 for (int i = 0; i < CacheData.length; i++) {
-                    if(Validate[i]){
-                        if(!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3)&4095) + "")){
+                    if (Validate[i]) {
+                        if (!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3) & 4095) + "")) {
                             line = i;
                         }
                     }
-                    if(menor > LFU[i]){
+                    if (menor > LFU[i]) {
                         menor = LFU[i];
                         lineNotExists = i;
                     }
                 }
-                if(line == -1){
+                if (line == -1) {
                     line = lineNotExists;
                     Validate[line] = true;
-                    Tag[line] = (Integer.rotateRight(d, 3)&4095) + "";
-                    moverRam_Cache(line,d);
+                    Tag[line] = (Integer.rotateRight(d, 3) & 4095) + "";
+                    moverRam_Cache(line, d);
                     cont += 0.1;
                 }
                 cont += 0.01;
-                CacheData[line][d&7] = data;//d&7 son solo los ultimos 3 bits la direccion
+                CacheData[line][d & 7] = data;//d&7 son solo los ultimos 3 bits la direccion
                 //cont += 0.11;
-                moverCache_Ram(line,d);
+                moverCache_Ram(line, d);
                 LFU[line]++;
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
@@ -221,15 +289,17 @@ public class Tarea1Orga {
             }
         }
     }
+
     //pero antes hay que pasarlo de la RAM a la cache 
-    public static void moverRam_Cache(int line, int d){
+    public static void moverRam_Cache(int line, int d) {
         //System.out.println(line);
-        for(int i = 0; i < CacheData[line].length; i++){
-             CacheData[line][i] = Ram[d+i];
+        for (int i = 0; i < CacheData[line].length; i++) {
+            CacheData[line][i] = Ram[d + i];
         }
     }
+
     //y luego de la caché a la RAM 
-    public static void moverCache_Ram(int line, int d){
-       Ram[d]=CacheData[line][d&7];//d&7 son solo los ultimos 3 bits la direccion
+    public static void moverCache_Ram(int line, int d) {
+        Ram[d] = CacheData[line][d & 7];//d&7 son solo los ultimos 3 bits la direccion
     }
 }
