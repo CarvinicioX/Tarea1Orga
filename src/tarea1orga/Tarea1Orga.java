@@ -24,13 +24,15 @@ public class Tarea1Orga {
     static int[] Ram;
     static int[][] CacheData;
     static boolean[] Validate;
+    static double[] Time;
     static String[] Tag;
     static double cont = 0;
+    static File Data = null;
 
     public static void main(String[] args) {
-        init();
         int menor, mayor, a;
         for (int tipo = 0; tipo < 4; tipo++) {
+            init();
             escribir(100, tipo, 10);    //En la memoria 100 escribe un 10
             escribir(101, tipo, 13);
             escribir(102, tipo, 21);
@@ -60,15 +62,15 @@ public class Tarea1Orga {
                     mayor = leer(i, tipo);
                 }
             }
-            System.out.print("Para ");
-            System.out.print(cont);
+            Time[tipo] = cont;
+            cont = 0;
         }
         System.exit(0);
     }
 
     public static void init() {
         Ram = new int[4096];
-        CacheData = new int[32][11];
+        CacheData = new int[32][8];
         cont = 0;
         for (int i = 0; i < 32; i++) {
             Validate[i] = false;
@@ -76,6 +78,9 @@ public class Tarea1Orga {
             for (int j = 0; j < 8; j++) {
                 CacheData[i][j] = 0;
             }
+        }
+        if (Data != null) {
+            return;
         }
         JFileChooser jfc = new JFileChooser();
         jfc.setFileFilter(new FileNameExtensionFilter("Text files", "txt"));
@@ -90,7 +95,7 @@ public class Tarea1Orga {
                 JOptionPane.showMessageDialog(new JFrame(), "Error\nArchivo Invalido", "Error de Capa 8", JOptionPane.ERROR_MESSAGE);
             }
         }
-        File Data = jfc.getSelectedFile();
+        Data = jfc.getSelectedFile();
         try {
             BufferedReader fileIn = new BufferedReader(new FileReader(Data));
             String line;
