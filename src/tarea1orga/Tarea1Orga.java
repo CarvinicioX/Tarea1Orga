@@ -9,18 +9,25 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
 /**
  *
  * @author Vinicio.Guevara
  */
 public class Tarea1Orga {
 
-    /* Ram = 4096 B
+    /* Ram = 4096 B = 2^(10*2) Bytes
     Cache = 256 B = 32 Lineas
     Bloque = 8 B = 8 Palabras
     Conjunto = 4 Lineas
-    Palabras = 1 B */
+    Palabras = 1 B
+    *************
+    ASOCIATIVA
+    tamaño Bloque = tamaño linea = 8 bytes = 2^3 palabras
+    3 bits la palabra
+    9 bits la etiqueta
+    12 bits la direccion
+    +++++++++++++
+    */
     static int[] Ram;
     static int[][] CacheData;
     static boolean[] Validate;
@@ -28,6 +35,8 @@ public class Tarea1Orga {
     static double cont = 0;
 
     public static void main(String[] args) {
+        int x = Integer.rotateRight(2777, 3)&4095;
+        System.out.println(x);
         init();
         int menor, mayor, a;
         for (int tipo = 0; tipo < 4; tipo++) {
@@ -100,7 +109,9 @@ public class Tarea1Orga {
                 i++;
             }
         } catch (FileNotFoundException x) {
+            System.err.println(x.getMessage());
         } catch (IOException ex) {
+            System.err.println(ex.getMessage());
         }
     }
 
@@ -115,7 +126,18 @@ public class Tarea1Orga {
                 break;
             }
             case 2: {//Correspondecia Asociativa
-
+                int line = -1;//-1 no existe
+                for (int i = 0; i < CacheData.length; i++) {
+                    if(Validate[i]){
+                        if(Tag[i].equals(Integer.toBinaryString(d).substring(0, 8))){
+                            line = i;
+                        }
+                    }
+                }
+                if(line == -1){
+                    CacheData[i][] = Ram[d]
+                }
+                //Integer.rotateRight(2777, 3)&4095 //dis gets the value of the tag
                 break;
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
