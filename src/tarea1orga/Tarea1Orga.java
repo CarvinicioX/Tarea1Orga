@@ -1,4 +1,4 @@
-package def;
+package tarea1orga;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,7 +45,7 @@ public class Tarea1Orga {
         //int x = Integer.rotateRight(2777, 3)&4095; //Obtiene solo los primeros 9 bits (etiqueta)
         //System.out.println(x);
         Time = new double[4];
-        int menor, mayor, a;
+        int menor, mayor, a, n, temp;
         for (int tipo = 0; tipo < 4; tipo++) {
             init();
             escribir(100, tipo, 10);    //En la memoria 100 escribe un 10
@@ -78,7 +78,18 @@ public class Tarea1Orga {
                 }
             }
             Time[tipo] = cont;
-            cont = 0;
+            init();
+            n = 1000;
+            for (int i = 0; i <= n - 2; i++) {
+                for (int j = i + 1; j <= n - 1; j++) {
+                    if (leer(i, tipo) > leer(j, tipo)) {
+                        temp = leer(i, tipo);
+                        escribir(i, tipo, leer(j, tipo));
+                        escribir(j, tipo, temp);
+                    }
+                }
+            }
+            System.out.println(cont);
         }
         for (int i = 0; i < 4; i++) {
             Time[i] = Math.round(Time[i] * 100.0) / 100.0;
@@ -211,8 +222,20 @@ public class Tarea1Orga {
                 //Integer.rotateRight(2777, 3)&4095 //dis gets the value of the tag
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
+                int InnerTag, InnerWord;
+                InnerTag = Integer.rotateRight(d, 2) & 1023;
+                InnerWord = d & 3;
+                Tag[InnerTag / 8] = InnerTag + "";
+                if (Validate[InnerTag / 8] && !Modified[InnerTag / 8] && Tag[InnerTag / 8].equals(Integer.toString(InnerTag))) {
+                    cont += 0.01;
+                    return CacheData[InnerTag / 8][InnerWord];
+                } else if (Validate[InnerTag / 8] && !Modified[InnerTag / 8] && !(Tag[InnerTag / 8].equals(Integer.toString(InnerTag)))) {
+                    for (int i = 0; i < 8; i++) {
 
-                break;
+                    }
+                } else if (!Validate[InnerTag / 8]) {
+
+                }
             }
         }
         return valor;
@@ -279,7 +302,7 @@ public class Tarea1Orga {
                 }
                 cont += 0.01;
                 CacheData[line][d & 7] = data;//d&7 son solo los ultimos 3 bits la direccion
-                //cont += 0.11;
+                cont += 0.11;
                 moverCache_Ram(line, d);
                 LFU[line]++;
             }
@@ -290,7 +313,7 @@ public class Tarea1Orga {
         }
     }
 
-    //pero antes hay que pasarlo de la RAM a la cache 
+    //pero antes hay que pasarlo de la RAM a la cache
     public static void moverRam_Cache(int line, int d) {
         //System.out.println(line);
         for (int i = 0; i < CacheData[line].length; i++) {
@@ -298,7 +321,7 @@ public class Tarea1Orga {
         }
     }
 
-    //y luego de la caché a la RAM 
+    //y luego de la caché a la RAM
     public static void moverCache_Ram(int line, int d) {
         Ram[d] = CacheData[line][d & 7];//d&7 son solo los ultimos 3 bits la direccion
     }
