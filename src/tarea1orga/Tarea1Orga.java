@@ -21,13 +21,23 @@ public class Tarea1Orga {
     Bloque = 8 B = 8 Palabras
     Conjunto = 4 Lineas
     Palabras = 1 B
+    512 Bloques
     *************
-    ASOCIATIVA
+    ASOCIATIVA POR CONJUNTOS
     tamaño Bloque = tamaño linea = 8 bytes = 2^3 palabras
     3 bits la palabra
-    9 bits la etiqueta
+    9 bits la bloque
+    Bloque
+        2 bits Conjunto
+        7 bits Etiqueta
     12 bits la direccion
     +++++++++++++
+    Asociativa por Conjuntos
+    Tamaño Bloque = 2^3 palabras
+    Direccion = 12 bits
+    Palabra = 3 bits
+    Conjunto = 2 bits
+    Etiqueta = 7 bits
      */
     static int[] Ram;
     static int[][] CacheData;
@@ -37,7 +47,8 @@ public class Tarea1Orga {
     static boolean[] Modified;
     static int[] Block;
     static double[] Time;
-    static String[] Tag;
+    static int[] Tag;
+    static int[] Set;
     static double cont = 0;
     static File Data = null;
 
@@ -112,13 +123,15 @@ public class Tarea1Orga {
         Validate = new boolean[32];
         Modified = new boolean[32];
         Block = new int[32];
-        Tag = new String[32];
+        Tag = new int[32];
+        Set = new int[32];
         cont = 0;
         for (int i = 0; i < 32; i++) {
             Validate[i] = false;
             Modified[i] = false;
             Block[i] = 0;
-            Tag[i] = "";
+            Tag[i] = -1;
+            Set[i] = -1;
             LFU[i] = 0;
             for (int j = 0; j < 8; j++) {
                 CacheData[i][j] = 0;
@@ -200,7 +213,7 @@ public class Tarea1Orga {
                 int menor = LFU[0];
                 for (int i = 0; i < CacheData.length; i++) {
                     if (Validate[i]) {
-                        if (!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3) & 4095) + "")) {
+                        if (Tag[i] == (Integer.rotateRight(d, 3) & 4095)) {
                             line = i;
                         }
                     }
@@ -213,7 +226,7 @@ public class Tarea1Orga {
                     line = lineNotExists;
                     moverRam_Cache(line, d);
                     Validate[line] = true;
-                    Tag[line] = (Integer.rotateRight(d, 3) & 4095) + "";
+                    Tag[line] = (Integer.rotateRight(d, 3) & 4095);
                     cont += 0.1;
                 }
                 cont += 0.01;
@@ -222,20 +235,33 @@ public class Tarea1Orga {
                 //Integer.rotateRight(2777, 3)&4095 //dis gets the value of the tag
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
-                int InnerTag, InnerWord;
-                InnerTag = Integer.rotateRight(d, 2) & 1023;
-                InnerWord = d & 3;
-                Tag[InnerTag / 8] = InnerTag + "";
-                if (Validate[InnerTag / 8] && !Modified[InnerTag / 8] && Tag[InnerTag / 8].equals(Integer.toString(InnerTag))) {
-                    cont += 0.01;
-                    return CacheData[InnerTag / 8][InnerWord];
-                } else if (Validate[InnerTag / 8] && !Modified[InnerTag / 8] && !(Tag[InnerTag / 8].equals(Integer.toString(InnerTag)))) {
-                    for (int i = 0; i < 8; i++) {
-
+                int InnerBlock, InnerTag, InnerSet, InnerWord;
+                InnerBlock = Integer.rotateRight(d, 3) & 511;//9 bits para el bloque, el bloque es la etiqueta y el conjunto merged
+                InnerTag = Integer.rotateRight(d, 5) & 127;//7 bits para la etiqueta
+                InnerSet = Integer.rotateRight(d, 3) & 3;//3 bits para el conjunto
+                InnerWord = d & 7;//2 bits para la palabra
+                if (Validate[InnerTag / 4]) {
+                    if (Tag[InnerTag / 4] != InnerTag) {
+                        if (Modified[InnerTag / 4]) {//Para saber donde empieza el bloque se divide la direccion entre 8 y se multiplica por ocho en un int de java para que solo agarre la parte entera de la division
+                            for (int i = 0; i < 8; i++) {
+                                
+                                cont += 0.11;
+                            }
+                            Modified[InnerTag] = false;
+                        }
+                        for (int i = 0; i < 8; i++) {
+                            
+                            cont += 0.11;
+                        }
                     }
-                } else if (!Validate[InnerTag / 8]) {
-
+                } else {
+                    for (int i = 0; i < 8; i++) {
+                        
+                        cont += 0.11;
+                    }
                 }
+                cont += 0.01;
+                return CacheData[InnerTag / 4][InnerWord];
             }
         }
         return valor;
@@ -284,7 +310,7 @@ public class Tarea1Orga {
                 int menor = LFU[0];
                 for (int i = 0; i < CacheData.length; i++) {
                     if (Validate[i]) {
-                        if (!Tag[i].isEmpty() && Tag[i].equals((Integer.rotateRight(d, 3) & 4095) + "")) {
+                        if (Tag[i] == (Integer.rotateRight(d, 3) & 4095)) {
                             line = i;
                         }
                     }
@@ -296,7 +322,7 @@ public class Tarea1Orga {
                 if (line == -1) {
                     line = lineNotExists;
                     Validate[line] = true;
-                    Tag[line] = (Integer.rotateRight(d, 3) & 4095) + "";
+                    Tag[line] = (Integer.rotateRight(d, 3) & 4095);
                     moverRam_Cache(line, d);
                     cont += 0.1;
                 }
