@@ -59,38 +59,7 @@ public class Tarea1Orga {
         int menor, mayor, a, n, temp;
         for (int tipo = 0; tipo < 4; tipo++) {
             init();
-            escribir(100, tipo, 10);    //En la memoria 100 escribe un 10
-            escribir(101, tipo, 13);
-            escribir(102, tipo, 21);
-            escribir(103, tipo, 11);
-            escribir(104, tipo, 67);
-            escribir(105, tipo, 43);
-            escribir(106, tipo, 9);
-            escribir(107, tipo, 11);
-            escribir(108, tipo, 19);
-            escribir(109, tipo, 23);
-            escribir(110, tipo, 32);
-            escribir(111, tipo, 54);
-            escribir(112, tipo, 98);
-            escribir(113, tipo, 7);
-            escribir(114, tipo, 13);
-            escribir(115, tipo, 1);
-            menor = leer(100, tipo);
-            mayor = menor;
-            a = 0;
-            for (int i = 101; i <= 115; i++) {
-                a++;
-                escribir(615, tipo, a);
-                if (leer(i, tipo) < menor) {
-                    menor = leer(i, tipo);
-                }
-                if (leer(i, tipo) > mayor) {
-                    mayor = leer(i, tipo);
-                }
-            }
-            Time[tipo] = cont;
-            init();
-            n = 1000;
+            n = 5;
             for (int i = 0; i <= n - 2; i++) {
                 for (int j = i + 1; j <= n - 1; j++) {
                     if (leer(i, tipo) > leer(j, tipo)) {
@@ -100,19 +69,19 @@ public class Tarea1Orga {
                     }
                 }
             }
-            System.out.println(cont);
+            Time[tipo] = cont;
         }
         for (int i = 0; i < 4; i++) {
             Time[i] = Math.round(Time[i] * 100.0) / 100.0;
         }
-        System.out.println(" ----------------------------------------------");
-        System.out.println("|           Tipo           | Tiempo de Corrida");
-        System.out.println(" --------------------------+-------------------");
-        System.out.println("|        Sin Cache         | " + Time[0] + " μs");
-        System.out.println("|         Directo          | " + Time[1] + " μs");
-        System.out.println("|        Asociativo        | " + Time[2] + " μs");
-        System.out.println("| Asociativo por Conjuntos | " + Time[3] + " μs");
-        System.out.println(" ----------------------------------------------");
+        System.out.println("-----------------------------------------------");
+        System.out.println("|           Tipo           | Tiempo de Corrida|");
+        System.out.println("---------------------------+-------------------");
+        System.out.println("|        Sin Cache         | " + Time[0] + " μs      |");
+        System.out.println("|         Directo          | " + Time[1] + " μs      |");
+        System.out.println("|        Asociativo        | " + Time[2] + " μs      |");
+        System.out.println("| Asociativo por Conjuntos | " + Time[3] + " μs      |");
+        System.out.println("-----------------------------------------------");
         System.exit(0);
     }
 
@@ -137,23 +106,22 @@ public class Tarea1Orga {
                 CacheData[i][j] = 0;
             }
         }
-        if (Data != null) {
-            return;
-        }
-        JFileChooser jfc = new JFileChooser();
-        jfc.setFileFilter(new FileNameExtensionFilter("Text files", "txt"));
-        int opt = 1;
-        while (opt != JFileChooser.OPEN_DIALOG) {
-            if (jfc.showOpenDialog(new JFrame()) == JFileChooser.CANCEL_OPTION) {
-                System.exit(0);
+        if (Data == null) {
+            JFileChooser jfc = new JFileChooser();
+            jfc.setFileFilter(new FileNameExtensionFilter("Text files", "txt"));
+            int opt = 1;
+            while (opt != JFileChooser.OPEN_DIALOG) {
+                if (jfc.showOpenDialog(new JFrame()) == JFileChooser.CANCEL_OPTION) {
+                    System.exit(0);
+                }
+                if (jfc.getSelectedFile() != null && jfc.getSelectedFile().getName().equals("datos.txt")) {
+                    break;
+                } else {
+                    JOptionPane.showMessageDialog(new JFrame(), "Error\nArchivo Invalido", "Error de Capa 8", JOptionPane.ERROR_MESSAGE);
+                }
             }
-            if (jfc.getSelectedFile() != null && jfc.getSelectedFile().getName().equals("datos.txt")) {
-                break;
-            } else {
-                JOptionPane.showMessageDialog(new JFrame(), "Error\nArchivo Invalido", "Error de Capa 8", JOptionPane.ERROR_MESSAGE);
-            }
+            Data = jfc.getSelectedFile();
         }
-        Data = jfc.getSelectedFile();
         try {
             BufferedReader fileIn = new BufferedReader(new FileReader(Data));
             String line;
@@ -238,30 +206,34 @@ public class Tarea1Orga {
                 int InnerBlock, InnerTag, InnerSet, InnerWord;
                 InnerBlock = Integer.rotateRight(d, 3) & 511;//9 bits para el bloque, el bloque es la etiqueta y el conjunto merged
                 InnerTag = Integer.rotateRight(d, 5) & 127;//7 bits para la etiqueta
-                InnerSet = Integer.rotateRight(d, 3) & 3;//3 bits para el conjunto
+                InnerSet = Integer.rotateRight(d, 3) & 3;//2 bits para el conjunto
                 InnerWord = d & 7;//2 bits para la palabra
-                if (Validate[InnerTag / 4]) {
-                    if (Tag[InnerTag / 4] != InnerTag) {
-                        if (Modified[InnerTag / 4]) {//Para saber donde empieza el bloque se divide la direccion entre 8 y se multiplica por ocho en un int de java para que solo agarre la parte entera de la division
+                if (Validate[InnerBlock / 16]) {
+                    if (Tag[InnerBlock / 16] != InnerBlock) {
+                        if (Modified[InnerBlock / 16]) {//Para saber donde empieza el bloque se divide la direccion entre 8 y se multiplica por ocho en un int de java para que solo agarre la parte entera de la division
                             for (int i = 0; i < 8; i++) {
-                                
-                                cont += 0.11;
+                                Ram[Integer.rotateLeft(Tag[InnerBlock / 16], 3) + i] = CacheData[InnerBlock / 16][i];
+                                cont += 0.011;
                             }
-                            Modified[InnerTag] = false;
+                            Modified[InnerBlock / 16] = false;
                         }
                         for (int i = 0; i < 8; i++) {
-                            
-                            cont += 0.11;
+                            CacheData[InnerBlock / 16][i] = Ram[Integer.rotateLeft(Integer.rotateRight(d, 3) & 511, 3) + i];
+                            Tag[InnerBlock / 16] = InnerBlock;
+                            Set[InnerBlock / 16] = InnerSet;
+                            cont += 0.011;
                         }
                     }
                 } else {
                     for (int i = 0; i < 8; i++) {
-                        
-                        cont += 0.11;
+                        CacheData[InnerBlock / 16][i] = Ram[Integer.rotateLeft(Integer.rotateRight(d, 3) & 511, 3) + i];
+                        Tag[InnerBlock / 16] = InnerBlock;
+                        Set[InnerBlock / 16] = InnerSet;
+                        cont += 0.011;
                     }
                 }
-                cont += 0.01;
-                return CacheData[InnerTag / 4][InnerWord];
+                cont += 0.001;
+                return CacheData[InnerBlock / 16][InnerWord];
             }
         }
         return valor;
@@ -333,7 +305,39 @@ public class Tarea1Orga {
                 LFU[line]++;
             }
             case 3: {//Correspondecia Asociativa por Conjuntos
-
+                int InnerBlock, InnerTag, InnerSet, InnerWord;
+                InnerBlock = Integer.rotateRight(d, 3) & 511;//9 bits para el bloque, el bloque es la etiqueta y el conjunto merged
+                InnerTag = Integer.rotateRight(d, 5) & 127;//7 bits para la etiqueta
+                InnerSet = Integer.rotateRight(d, 3) & 3;//2 bits para el conjunto
+                InnerWord = d & 7;//2 bits para la palabra
+                if (Validate[InnerBlock / 16]) {//Es Valido
+                    if (Tag[InnerBlock / 16] != InnerBlock) {//No esta en Cache
+                        if (Modified[InnerBlock / 16]) {//Esta Modificado
+                            for (int i = 0; i < 8; i++) {
+                                Ram[Integer.rotateLeft(Tag[InnerTag / 16], 3) + i] = CacheData[InnerBlock / 16][i];
+                                cont += 0.011;
+                            }
+                            Modified[InnerTag / 16] = false;
+                        }
+                        for (int i = 0; i < 8; i++) {
+                            CacheData[InnerBlock / 16][i] = Ram[Integer.rotateLeft(Integer.rotateRight(d, 3) & 511, 3)];
+                            Tag[InnerBlock / 16] = InnerBlock;
+                            Set[InnerBlock / 16] = InnerSet;
+                            cont += 0.011;
+                        }
+                    }
+                } else {//No es Valido
+                    for (int i = 0; i < 8; i++) {
+                        CacheData[InnerBlock / 16][i] = Ram[Integer.rotateLeft(Integer.rotateRight(d, 3) & 511, 3)];
+                        Tag[InnerBlock / 16] = InnerBlock;
+                        Set[InnerBlock / 16] = InnerSet;
+                        cont += 0.011;
+                    }
+                    Validate[InnerBlock / 16] = true;
+                }
+                CacheData[InnerBlock / 16][InnerWord] = data;
+                Modified[InnerBlock / 16] = true;
+                cont += 0.001;
                 break;
             }
         }
